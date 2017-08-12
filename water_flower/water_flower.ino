@@ -2,11 +2,12 @@ int ASignal = A0;
 int ReceiveByte = 0;
 int loopCnt;
 int sensorValue;
+int dirwetmax=0;
 unsigned long time;
 int humi;int temp;
 int chr[24] = {0};
-int tol;
-int ditwet;
+int tol=0;
+int ditwet=0;
 #define pin 10
 void setup() {
   // put your setup code here, to run once:
@@ -16,7 +17,8 @@ void setup() {
 
 void dir_wet() {
   sensorValue = analogRead(ASignal);
- // Serial.println(sensorValue);
+  if(sensorValue>dirwetmax)
+      dirwetmax=sensorValue;
 }
 
 void temp_wet(){
@@ -91,24 +93,38 @@ temp=chr[16]*128+chr[17]*64+chr[18]*32+chr[19]*16+chr[20]*8+chr[21]*4+chr[22]*2+
 void loop(){
   dir_wet();
   temp_wet();
-  ditwet=(1024-sensorValue)*100/742;
+  int i=0;
+  ditwet=(dirwetmax-sensorValue)*100/(dirwetmax-250);
+  if(ditwet<0)
+  {
+    ditwet=-ditwet;
+  }
   if (Serial.available()> 0) 
    {   //串口是否有输入
             ReceiveByte = Serial.read();
+            i++;
             switch(ReceiveByte){
                 case 0x30:    //十进制48转换十六进制为30
-                        Serial.print(99,DEC);   //发送温度识别码
+                          Serial.print(99,DEC);   //发送温度识别码
                           Serial.print(temp, DEC);//发送值
-                        Serial.print(98,DEC);   //发送湿度识别码
-                         Serial.print(humi, DEC); //发送值
-                         Serial.print(97,DEC);   //发送d土壤识别码
-                         if(ditwet<10)
-                         else
-                          if(ditwet<10)
-                         {
-                          Serial.print(0, DEC);//发送值
-                         }
-                         Serial.print(ditwet, DEC);//发送值
+                          Serial.print(98,DEC);   //发送湿度识别码
+                          Serial.print(humi, DEC); //发送值
+                          Serial.print(97,DEC);   //发送d土壤识别码
+                          if(ditwet==100||ditwet<=0)
+                          {
+                             Serial.print(0,DEC);
+                             Serial.print(0,DEC);
+                          }
+                          else
+                          {
+                            if(ditwet<10&&ditwet>0)
+                            {
+                                Serial.print(0, DEC);//发送值
+                            }
+                            Serial.print(ditwet, DEC);//发送值
+                            break;
+                          }
+                other:break;
             }
           ReceiveByte=0x00;  
    }
